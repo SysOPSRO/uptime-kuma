@@ -26,6 +26,20 @@
                         </div>
                     </div>
 
+                    <div class="my-3">
+                        <label for="unit" class="form-label">{{ $t("Unit") }}</label>
+                        <select id="unit" v-model="monitor.unit" class="form-select">
+                            <option value="ms">Milliseconds (ms)</option>
+                            <option value="second">Seconds</option>
+                            <option value="percent">Percent (%)</option>
+                            <option value="MB">Megabytes (MB)</option>
+                            <option value="GB">Gigabytes (GB)</option>
+                        </select>
+                        <div class="form-text">
+                            {{ $t("Select the unit for monitoring values") }}
+                        </div>
+                    </div>
+
                     <!-- Custom URL -->
                     <template v-if="monitor.isClickAble">
                         <label for="customUrl" class="form-label">{{ $t("Custom URL") }}</label>
@@ -83,6 +97,7 @@ export default {
             monitor: {
                 id: null,
                 name: null,
+                unit: "ms"
             },
         };
     },

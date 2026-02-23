@@ -213,6 +213,9 @@ class Monitor extends BeanModel {
             saveResponse: this.getSaveResponse(),
             saveErrorResponse: this.getSaveErrorResponse(),
             responseMaxLength: this.response_max_length ?? RESPONSE_BODY_LENGTH_DEFAULT,
+
+            // support other units, default to ms
+            unit: this.unit || "ms", // default to ms
         };
 
         if (includeSensitiveData) {
@@ -1670,6 +1673,9 @@ class Monitor extends BeanModel {
         if (this.retryInterval < MIN_INTERVAL_SECOND) {
             throw new Error(`Retry interval cannot be less than ${MIN_INTERVAL_SECOND} seconds`);
         }
+        if (this.unit && !Monitor.UNIT_TYPES.includes(this.unit)) {
+            throw new Error(`Invalid unit "${this.unit}". Must be one of: ${Monitor.UNIT_TYPES.join(", ")}`);
+        }
 
         if (this.response_max_length !== undefined) {
             if (this.response_max_length < 0) {
@@ -2103,5 +2109,14 @@ class Monitor extends BeanModel {
         }
     }
 }
+
+// add monitor types to support other units aside ms
+Monitor.UNIT_TYPES = [
+    "ms",
+    "second",
+    "percent",
+    "MB",
+    "GB",
+];
 
 module.exports = Monitor;

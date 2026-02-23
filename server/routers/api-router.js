@@ -64,7 +64,7 @@ router.all("/api/push/:pushToken", async (request, response) => {
         if (!monitor) {
             throw new Error("Monitor not found or not active.");
         }
-
+        let unit = monitor.unit || "ms"; // default to ms
         const previousHeartbeat = await Monitor.getPreviousHeartbeat(monitor.id);
 
         let isFirstBeat = true;
@@ -75,6 +75,7 @@ router.all("/api/push/:pushToken", async (request, response) => {
         bean.ping = ping;
         bean.msg = msg;
         bean.downCount = previousHeartbeat?.downCount || 0;
+        bean.unit = unit;
 
         if (previousHeartbeat) {
             isFirstBeat = false;

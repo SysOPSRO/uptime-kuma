@@ -44,6 +44,7 @@ import {
 } from "chart.js";
 import "chartjs-adapter-dayjs-4";
 import { Line } from "vue-chartjs";
+import { getUnitSuffix, formatPingWithUnit } from "../units";
 import { UP, DOWN, PENDING, MAINTENANCE } from "../util.ts";
 
 Chart.register(
@@ -147,7 +148,7 @@ export default {
                     y: {
                         title: {
                             display: true,
-                            text: this.$t("respTime"),
+                            text: getUnitSuffix(this.monitor?.unit) !== "ms" ? this.$t("respData") + " " + getUnitSuffix(this.monitor?.unit) : this.$t("respTime"),
                         },
                         offset: false,
                         grid: {
@@ -182,7 +183,7 @@ export default {
                         callbacks: {
                             label: (context) => {
                                 const label = context.dataset.label;
-                                return `${label} ${new Intl.NumberFormat().format(context.parsed.y)} ms`;
+                                return `${label} - ${formatPingWithUnit(context.parsed.y,this.monitor?.unit,isActive)}`;
                             },
                         },
                     },

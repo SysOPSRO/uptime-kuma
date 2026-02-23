@@ -236,6 +236,25 @@
                                     {{ $t("Reset Token") }}
                                 </button>
                             </div>
+                            <div class="my-3">
+                                <label for="unit" class="form-label">{{ $t("Unit") }}</label>
+                                <select
+                                    id="unit"
+                                    v-model="monitor.unit"
+                                    class="form-select"
+                                >
+                                    <option
+                                        v-for="opt in unitOptions"
+                                        :key="opt.value"
+                                        :value="opt.value"
+                                    >
+                                        {{ opt.label }}
+                                    </option>
+                                </select>
+                                <div class="form-text">
+                                    {{ $t("unitDescription") }}
+                                </div>
+                            </div>
 
                             <!-- Keyword -->
                             <div v-if="monitor.type === 'keyword' || monitor.type === 'grpc-keyword'" class="my-3">
@@ -2792,6 +2811,7 @@
 </template>
 
 <script>
+import { UNIT_OPTIONS } from "../units";
 import VueMultiselect from "vue-multiselect";
 import { useToast } from "vue-toastification";
 import ActionSelect from "../components/ActionSelect.vue";
@@ -2875,6 +2895,8 @@ const monitorDefaults = {
     rabbitmqPassword: "",
     conditions: [],
     system_service_name: "",
+    // support other units, defaults to ms
+    unit: "ms",
 };
 
 export default {
@@ -3028,6 +3050,11 @@ export default {
 
         pushURL() {
             return this.$root.baseURL + "/api/push/" + this.monitor.pushToken + "?status=up&msg=OK&ping=";
+        },
+
+        // build list of units to choose from for push monitor
+        unitOptions() {
+            return UNIT_OPTIONS;
         },
 
         protoServicePlaceholder() {

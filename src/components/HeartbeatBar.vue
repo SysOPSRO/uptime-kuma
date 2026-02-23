@@ -40,6 +40,7 @@
 
 <script>
 import dayjs from "dayjs";
+import { formatPingWithUnit } from "../units";
 import { DOWN, UP, PENDING, MAINTENANCE } from "../util.ts";
 import Tooltip from "./Tooltip.vue";
 
@@ -95,6 +96,13 @@ export default {
          */
         normalizedHeartbeatBarDays() {
             return Math.max(0, Math.min(365, Math.floor(this.heartbeatBarDays || 0)));
+        },
+
+        /**
+         * We treat push monitors differently to allow other data to them
+         */
+        isPushMonitor() {
+            return this.monitor?.type !== "push";
         },
 
         /**
@@ -395,7 +403,18 @@ export default {
                 }
             }
         },
-
+        /**
+         * To be able to format the data for push monitors, e.g.:
+         *      <span>{{ formatPing(beat) }}</span>
+         *
+         */
+        formatPing(beat) {
+            return formatPingWithUnit(
+                beat.ping,
+                this.monitor?.unit,
+                this.isPushMonitor
+            );
+        },
         /**
          * Get the title of the beat.
          * Used as the hover tooltip on the heartbeat bar.
