@@ -101,7 +101,7 @@ export default {
         /**
          * We treat push monitors differently to allow other data to them
          */
-        isPushMonitor() {
+        notPushMonitor() {
             return this.monitor?.type !== "push";
         },
 
@@ -412,7 +412,7 @@ export default {
             return formatPingWithUnit(
                 beat.ping,
                 this.monitor?.unit,
-                this.isPushMonitor
+                this.notPushMonitor
             );
         },
         /**

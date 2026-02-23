@@ -1479,7 +1479,6 @@
     "teltonikaPhoneNumber": "Phone number",
     "teltonikaPhoneNumberHelptext": "The number must be in the international format {0}, {1}. Only one number is allowed.",
     "Unit": "Unit",
-    "Select the unit for monitoring values": "Select the unit for monitoring values (applies to push monitors and custom checks)",
     "unitDescription": "The measurement unit for the response value. For push monitors this describes what the pushed value represents. Default is milliseconds (ms).",
     "ms": "ms",
     "second": "s",

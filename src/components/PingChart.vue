@@ -183,6 +183,7 @@ export default {
                         callbacks: {
                             label: (context) => {
                                 const label = context.dataset.label;
+                                const isActive = this.monitor?.type !== "push";
                                 return `${label} - ${formatPingWithUnit(context.parsed.y,this.monitor?.unit,isActive)}`;
                             },
                         },

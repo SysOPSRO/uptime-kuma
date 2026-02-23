@@ -762,7 +762,7 @@ let needSetup = false;
                     bean.retry_only_on_status_code_failure = monitor.retryOnlyOnStatusCodeFailure;
                 }
                 bean.user_id = socket.userID;
-
+                bean.unit = monitor.unit || "ms";
                 bean.validate();
 
                 await R.store(bean);
@@ -933,7 +933,7 @@ let needSetup = false;
                 bean.ping_numeric = monitor.ping_numeric;
                 bean.ping_count = monitor.ping_count;
                 bean.ping_per_request_timeout = monitor.ping_per_request_timeout;
-
+                bean.unit = monitor.unit || "ms";
                 bean.validate();
 
                 await R.store(bean);
