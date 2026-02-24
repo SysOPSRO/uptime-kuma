@@ -201,7 +201,7 @@
                         <p class="col-4 col-sm-12 mb-0 mb-sm-2">({{ $t("Current") }})</p>
                         <span class="col-4 col-sm-12 num">
                             <a href="#" @click.prevent="showPingChartBox = !showPingChartBox">
-                                <CountUp :value="ping" />
+                                <CountUp :value="ping" :monitor="monitor" />
                             </a>
                         </span>
                     </div>
@@ -212,7 +212,7 @@
                         <h4 class="col-4 col-sm-12">{{ pingTitle(true) }}</h4>
                         <p class="col-4 col-sm-12 mb-0 mb-sm-2">({{ $t("hours", 24) }})</p>
                         <span class="col-4 col-sm-12 num">
-                            <CountUp :value="avgPing" />
+                            <CountUp :value="avgPing" :monitor="monitor" />
                         </span>
                     </div>
 
@@ -491,7 +491,6 @@ export default {
             let id = this.$route.params.id;
             return this.$root.monitorList[id];
         },
-
         /**
          * Get the count of children monitors for this group
          * @returns {number} Number of children monitors

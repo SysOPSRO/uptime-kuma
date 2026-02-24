@@ -18,10 +18,9 @@ export default {
             type: Number,
             default: 0.3,
         },
-        /** Unit of the value */
-        unit: {
-            type: String,
-            default: "ms",
+        monitor: {
+            type: Object,
+            default: null.
         },
     },
 
@@ -48,6 +47,9 @@ export default {
             } else {
                 return this.output;
             }
+        },
+        unit() {
+            return this.monitor?.unit || "ms";
         },
     },
 
