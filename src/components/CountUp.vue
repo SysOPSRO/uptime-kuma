@@ -20,7 +20,7 @@ export default {
         },
         monitor: {
             type: Object,
-            default: null.
+            default: null,
         },
     },
 
