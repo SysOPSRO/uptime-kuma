@@ -90,6 +90,9 @@ export default {
         };
     },
     computed: {
+        monitor() {
+            return this.$root.monitorList?.[this.monitorId];
+        },
         chartOptions() {
             return {
                 responsive: true,

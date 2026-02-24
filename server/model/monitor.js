@@ -216,6 +216,9 @@ class Monitor extends BeanModel {
 
             // support other units, default to ms
             unit: this.unit || "ms", // default to ms
+            // delay 1st notification, suppress warning notifications
+            minBeatsBeforeNotify: this.min_beats_before_notify || 0,
+            suppressWarningNotify: Boolean(this.suppress_warning_notify)
         };
 
         if (includeSensitiveData) {
@@ -450,6 +453,7 @@ class Monitor extends BeanModel {
 
             let bean = R.dispense("heartbeat");
             bean.monitor_id = this.id;
+            bean.unit = this.unit || "ms";
             bean.time = R.isoDateTimeMillis(dayjs.utc());
             bean.status = DOWN;
             bean.downCount = previousBeat?.downCount || 0;
@@ -996,23 +1000,32 @@ class Monitor extends BeanModel {
             bean.retries = retries;
 
             log.debug("monitor", `[${this.name}] Check isImportant`);
-            let isImportant = Monitor.isImportantBeat(isFirstBeat, previousBeat?.status, bean.status);
+            let isImportant;
+            // let isImportant = Monitor.isImportantBeat(isFirstBeat, previousBeat?.status, bean.status);
+
+            // Track consecutive same-status beats for lesser notifications
+            if (previousBeat && previousBeat.status === bean.status) {
+                bean.consecutive_count = (previousBeat.consecutive_count || 0) + 1;
+            } else {
+                bean.consecutive_count = 1;
+            }
+
+            const lastImportantBeat = await R.findOne("heartbeat",
+                " monitor_id = ? AND important = 1 ORDER BY time DESC ",
+                [this.id]);
+
+            isImportant = Monitor.shouldNotify(
+                this, bean, previousBeat, isFirstBeat, lastImportantBeat
+            );
 
             // Mark as important if status changed, ignore pending pings,
             // Don't notify if disrupted changes to up
             if (isImportant) {
                 bean.important = true;
-
                 if (Monitor.isImportantForNotification(isFirstBeat, previousBeat?.status, bean.status)) {
                     log.debug("monitor", `[${this.name}] sendNotification`);
                     await Monitor.sendNotification(isFirstBeat, this, bean);
-                } else {
-                    log.debug(
-                        "monitor",
-                        `[${this.name}] will not sendNotification because it is (or was) under maintenance`
-                    );
                 }
-
                 // Reset down count
                 bean.downCount = 0;
 
@@ -1022,6 +1035,11 @@ class Monitor extends BeanModel {
 
                 await UptimeKumaServer.getInstance().sendMaintenanceListByUserID(this.user_id);
             } else {
+                log.debug(
+                    "monitor",
+                    `[${this.name}] will not sendNotification because it is (or was) under maintenance`
+                );
+
                 bean.important = false;
 
                 if (bean.status === DOWN && this.resendInterval > 0) {
@@ -1676,6 +1694,9 @@ class Monitor extends BeanModel {
         if (this.unit && !Monitor.UNIT_TYPES.includes(this.unit)) {
             throw new Error(`Invalid unit "${this.unit}". Must be one of: ${Monitor.UNIT_TYPES.join(", ")}`);
         }
+        if (this.min_beats_before_notify !== undefined && this.min_beats_before_notify < 0) {
+            throw new Error("Minimum beats before notify cannot be negative");
+        }
 
         if (this.response_max_length !== undefined) {
             if (this.response_max_length < 0) {
@@ -2118,5 +2139,51 @@ Monitor.UNIT_TYPES = [
     "MB",
     "GB",
 ];
+
+/**
+ * Decide whether a heartbeat should be marked important (trigger notification).
+ * Respects min_beats_before_notify and suppress_warning_notify.
+ *
+ * @param {object} monitor       The monitor bean
+ * @param {object} bean          Current heartbeat bean
+ * @param {object|null} previousHeartbeat
+ * @param {boolean} isFirstBeat
+ * @param {object|null} lastImportantBeat  Last heartbeat with important=1
+ * @returns {boolean}
+ */
+Monitor.shouldNotify = function (monitor, bean, previousHeartbeat, isFirstBeat, lastImportantBeat) {
+    const { PENDING } = require("../../src/util");
+
+    // Suppress warning-level notifications if configured
+    if (monitor.suppress_warning_notify && bean.status === PENDING) {
+        return false;
+    }
+
+    const minBeats = monitor.min_beats_before_notify || 0;
+
+    // Original behaviour when dampening is off
+    if (minBeats <= 1) {
+        if (isFirstBeat) {
+            return true;
+        }
+        return previousHeartbeat && previousHeartbeat.status !== bean.status;
+    }
+
+    // Dampened: only fire when consecutive_count reaches threshold
+    // AND current status differs from last notified status
+    const lastNotifiedStatus = lastImportantBeat?.status;
+
+    if (isFirstBeat) {
+        // First ever beat — notify immediately regardless of threshold
+        return true;
+    }
+
+    if (bean.status === lastNotifiedStatus) {
+        // Already notified this status, nothing new
+        return false;
+    }
+
+    return bean.consecutive_count >= minBeats;
+};
 
 module.exports = Monitor;

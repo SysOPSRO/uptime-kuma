@@ -38,44 +38,27 @@ const UNIT_SUFFIX = {
  * @returns {string}  e.g. "123 ms", "0.42 s", "78.3 %"
  */
 export function formatPingWithUnit(value, unit = "ms", isActive = false) {
-    if (value === null || value === undefined || value === "") {
-        return "-";
-    }
-
+    if (value === null || value === undefined || value === "") return "-";
     const numVal = Number(value);
-    if (isNaN(numVal)) {
-        return "-";
-    }
+    if (isNaN(numVal)) return "-";
 
     const suffix = UNIT_SUFFIX[unit] || "ms";
 
-    // For active monitors whose raw value is always ms,
-    // convert to the requested display unit where meaningful.
-    if (isActive && unit === "second") {
-        return (numVal / 1000).toFixed(3) + " " + suffix;
+    switch (unit) {
+        case "second":
+            // Active monitors store ms natively; push monitors send seconds directly
+            return isActive
+                ? (numVal / 1000).toFixed(3) + " " + suffix
+                : numVal.toFixed(3) + " " + suffix;
+        case "percent":
+            return numVal.toFixed(2) + " " + suffix;
+        case "MB":
+        case "GB":
+            return numVal.toFixed(2) + " " + suffix;
+        case "ms":
+        default:
+            return Math.round(numVal) + " " + suffix;
     }
-
-    // For percent, avoid decimals beyond 2
-    if (unit === "percent") {
-        return numVal.toFixed(2) + " " + suffix;
-    }
-
-    // For MB / GB, show up to 2 decimal places
-    if (unit === "MB" || unit === "GB") {
-        return numVal.toFixed(2) + " " + suffix;
-    }
-
-    // Default: ms or active monitors in ms
-    if (unit === "ms") {
-        return Math.round(numVal) + " " + suffix;
-    }
-
-    // second unit for push monitors: value is already in seconds
-    if (unit === "second" && !isActive) {
-        return numVal.toFixed(3) + " " + suffix;
-    }
-
-    return numVal + " " + suffix;
 }
 
 /**

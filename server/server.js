@@ -763,6 +763,8 @@ let needSetup = false;
                 }
                 bean.user_id = socket.userID;
                 bean.unit = monitor.unit || "ms";
+                bean.min_beats_before_notify = monitor.minBeatsBeforeNotify || 0;
+                bean.suppress_warning_notify = Boolean(monitor.suppressWarningNotify);
                 bean.validate();
 
                 await R.store(bean);
@@ -934,6 +936,8 @@ let needSetup = false;
                 bean.ping_count = monitor.ping_count;
                 bean.ping_per_request_timeout = monitor.ping_per_request_timeout;
                 bean.unit = monitor.unit || "ms";
+                bean.min_beats_before_notify = monitor.minBeatsBeforeNotify || 0;
+                bean.suppress_warning_notify = Boolean(monitor.suppressWarningNotify);
                 bean.validate();
 
                 await R.store(bean);

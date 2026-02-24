@@ -1485,5 +1485,9 @@
     "percent": "%",
     "MB": "MB",
     "GB": "GB",
-    "respData": "Response data"
+    "respData": "Response data",
+    "minBeatsBeforeNotify": "Min. beats before first notification",
+    "minBeatsBeforeNotifyDescription": "Number of consecutive heartbeats with the same status required before a notification is sent. Set to 0 for immediate notification on status change. Useful for avoiding noise from brief flaps.",
+    "suppressWarningNotify": "Suppress warning notifications",
+    "suppressWarningNotifyDescription": "When enabled, heartbeats with warning status will not trigger notifications. For push monitors, use status=warning in your push URL."
 }

@@ -97,7 +97,9 @@ export default {
             monitor: {
                 id: null,
                 name: null,
-                unit: "ms"
+                unit: "ms",
+                minBeatsBeforeNotify: 0,
+                suppressWarningNotify: false,
             },
         };
     },

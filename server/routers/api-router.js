@@ -50,7 +50,15 @@ router.all("/api/push/:pushToken", async (request, response) => {
         let msg = request.query.msg || "OK";
         let ping = parseFloat(request.query.ping) || null;
         let statusString = request.query.status || "up";
-        const statusFromParam = statusString === "up" ? UP : DOWN;
+        //const statusFromParam = statusString === "up" ? UP : DOWN;
+        let statusFromParam;
+        if (statusString === "warning") {
+            statusFromParam = PENDING;
+        } else if (statusString === "down") {
+             statusFromParam = DOWN;
+         } else {
+             statusFromParam = UP;
+         }
 
         // Validate ping value - max 100 billion ms (~3.17 years)
         // Fits safely in both BIGINT and FLOAT(20,2)
@@ -98,27 +106,43 @@ router.all("/api/push/:pushToken", async (request, response) => {
         log.debug("router", "PreviousStatus: " + previousHeartbeat?.status);
         log.debug("router", "Current Status: " + bean.status);
 
-        bean.important = Monitor.isImportantBeat(isFirstBeat, previousHeartbeat?.status, bean.status);
+        //bean.important = Monitor.isImportantBeat(isFirstBeat, previousHeartbeat?.status, bean.status);
 
-        if (Monitor.isImportantForNotification(isFirstBeat, previousHeartbeat?.status, bean.status)) {
-            // Reset down count
-            bean.downCount = 0;
-
-            log.debug("monitor", `[${monitor.name}] sendNotification`);
-            await Monitor.sendNotification(isFirstBeat, monitor, bean);
+        // Track consecutive same-status beats for lesser notifications
+        if (previousHeartbeat && previousHeartbeat.status === bean.status) {
+            bean.consecutive_count = (previousHeartbeat.consecutive_count || 0) + 1;
         } else {
-            if (bean.status === DOWN && monitor.resendInterval > 0) {
-                ++bean.downCount;
-                if (bean.downCount >= monitor.resendInterval) {
-                    // Send notification again, because we are still DOWN
-                    log.debug(
-                        "monitor",
-                        `[${monitor.name}] sendNotification again: Down Count: ${bean.downCount} | Resend Interval: ${monitor.resendInterval}`
-                    );
-                    await Monitor.sendNotification(isFirstBeat, monitor, bean);
+            bean.consecutive_count = 1;
+        }
 
-                    // Reset down count
-                    bean.downCount = 0;
+        const lastImportantBeat = await R.findOne("heartbeat",
+            " monitor_id = ? AND important = 1 ORDER BY time DESC ",
+            [monitor.id]);
+
+        bean.important = Monitor.shouldNotify(
+            monitor, bean, previousHeartbeat, isFirstBeat, lastImportantBeat
+        );
+        if(bean.important) {
+            if (Monitor.isImportantForNotification(isFirstBeat, previousHeartbeat?.status, bean.status)) {
+                // Reset down count
+                bean.downCount = 0;
+
+                log.debug("monitor", `[${monitor.name}] sendNotification`);
+                await Monitor.sendNotification(isFirstBeat, monitor, bean);
+            } else {
+                if (bean.status === DOWN && monitor.resendInterval > 0) {
+                    ++bean.downCount;
+                    if (bean.downCount >= monitor.resendInterval) {
+                        // Send notification again, because we are still DOWN
+                        log.debug(
+                            "monitor",
+                            `[${monitor.name}] sendNotification again: Down Count: ${bean.downCount} | Resend Interval: ${monitor.resendInterval}`
+                        );
+                        await Monitor.sendNotification(isFirstBeat, monitor, bean);
+
+                        // Reset down count
+                        bean.downCount = 0;
+                    }
                 }
             }
         }

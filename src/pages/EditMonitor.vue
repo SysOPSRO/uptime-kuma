@@ -250,6 +250,40 @@
                                 </div>
                             </div>
 
+                            <div class="my-3">
+                                <label for="minBeatsBeforeNotify" class="form-label">
+                                    {{ $t("minBeatsBeforeNotify") }}
+                                </label>
+                                <input
+                                    id="minBeatsBeforeNotify"
+                                    v-model.number="monitor.minBeatsBeforeNotify"
+                                    type="number"
+                                    class="form-control"
+                                    min="0"
+                                    step="1"
+                                />
+                                <div class="form-text">
+                                    {{ $t("minBeatsBeforeNotifyDescription") }}
+                                </div>
+                            </div>
+
+                            <div class="my-3">
+                                <div class="form-check form-switch">
+                                    <input
+                                        id="suppressWarningNotify"
+                                        v-model="monitor.suppressWarningNotify"
+                                        class="form-check-input"
+                                        type="checkbox"
+                                    />
+                                    <label class="form-check-label" for="suppressWarningNotify">
+                                        {{ $t("suppressWarningNotify") }}
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    {{ $t("suppressWarningNotifyDescription") }}
+                                </div>
+                            </div>
+
                             <!-- Keyword -->
                             <div v-if="monitor.type === 'keyword' || monitor.type === 'grpc-keyword'" class="my-3">
                                 <label for="keyword" class="form-label">{{ $t("Keyword") }}</label>
@@ -2891,6 +2925,8 @@ const monitorDefaults = {
     system_service_name: "",
     // support other units, defaults to ms
     unit: "ms",
+    minBeatsBeforeNotify: 0,
+    suppressWarningNotify: false,
 };
 
 export default {

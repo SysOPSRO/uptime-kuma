@@ -98,6 +98,10 @@ export default {
             return Math.max(0, Math.min(365, Math.floor(this.heartbeatBarDays || 0)));
         },
 
+        monitor() {
+            return this.$root.monitorList?.[this.monitorId];
+        },
+
         /**
          * We treat push monitors differently to allow other data to them
          */
@@ -427,7 +431,7 @@ export default {
             }
 
             // Show timestamp for all beats (both individual and aggregated)
-            return `${this.$root.datetime(beat.time)}${beat.msg ? ` - ${beat.msg}` : ""}`;
+            return `${this.$root.datetime(beat.time)}${beat.msg ? ` ${ this.formatPing(beat) } - ${beat.msg}` : ` ${this.formatPing(beat)}`}`;
         },
 
         /**
