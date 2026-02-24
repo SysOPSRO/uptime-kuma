@@ -1000,8 +1000,8 @@ class Monitor extends BeanModel {
             bean.retries = retries;
 
             log.debug("monitor", `[${this.name}] Check isImportant`);
-            let isImportant;
-            // let isImportant = Monitor.isImportantBeat(isFirstBeat, previousBeat?.status, bean.status);
+            let shouldNotify = false;
+            let isImportant = Monitor.isImportantBeat(isFirstBeat, previousBeat?.status, bean.status);
 
             // Track consecutive same-status beats for lesser notifications
             if (previousBeat && previousBeat.status === bean.status) {
@@ -1014,30 +1014,32 @@ class Monitor extends BeanModel {
                 " monitor_id = ? AND important = 1 ORDER BY time DESC ",
                 [this.id]);
 
-            isImportant = Monitor.shouldNotify(
+            shouldNotify = Monitor.shouldNotify(
                 this, bean, previousBeat, isFirstBeat, lastImportantBeat
             );
 
             // Mark as important if status changed, ignore pending pings,
             // Don't notify if disrupted changes to up
-            if (isImportant) {
+            if (shouldNotify && Monitor.isImportantForNotification(isFirstBeat, lastImportantBeat?.status ?? previousBeat?.status, bean.status)) {
                 bean.important = true;
-                if (Monitor.isImportantForNotification(isFirstBeat, previousBeat?.status, bean.status)) {
-                    log.debug("monitor", `[${this.name}] sendNotification`);
-                    await Monitor.sendNotification(isFirstBeat, this, bean);
-                }
+                log.debug("monitor", `[${this.name}] sendNotification`);
+                await Monitor.sendNotification(isFirstBeat, this, bean);
                 // Reset down count
                 bean.downCount = 0;
-
                 // Clear Status Page Cache
                 log.debug("monitor", `[${this.name}] apicache clear`);
                 apicache.clear();
-
+                await UptimeKumaServer.getInstance().sendMaintenanceListByUserID(this.user_id);
+            } else if (isImportant) {
+                // Status changed but dampened (minBeats not reached) or maintenance
+                // Do NOT set bean.important=true here as it corrupts lastImportantBeat
+                bean.important = false;
+                apicache.clear();
                 await UptimeKumaServer.getInstance().sendMaintenanceListByUserID(this.user_id);
             } else {
                 log.debug(
                     "monitor",
-                    `[${this.name}] will not sendNotification because it is (or was) under maintenance`
+                    `[${this.name}] will not sendNotification (maintenance, dampening, or suppressed warning)`
                 );
 
                 bean.important = false;
@@ -2152,8 +2154,6 @@ Monitor.UNIT_TYPES = [
  * @returns {boolean}
  */
 Monitor.shouldNotify = function (monitor, bean, previousHeartbeat, isFirstBeat, lastImportantBeat) {
-    const { PENDING } = require("../../src/util");
-
     // Suppress warning-level notifications if configured
     if (monitor.suppress_warning_notify && bean.status === PENDING) {
         return false;

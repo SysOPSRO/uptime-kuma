@@ -239,11 +239,9 @@
                             <div v-if="monitor.type === 'push'" class="my-3">
                                 <label for="unit" class="form-label">{{ $t("Unit") }}</label>
                                 <select id="unit" v-model="monitor.unit" class="form-select">
-                                    <option value="ms">Milliseconds (ms)</option>
-                                    <option value="second">Seconds</option>
-                                    <option value="percent">Percent (%)</option>
-                                    <option value="MB">Megabytes (MB)</option>
-                                    <option value="GB">Gigabytes (GB)</option>
+                                    <option v-for="opt in unitOptions" :key="opt.value" :value="opt.value">
+                                        {{ opt.label }}
+                                    </option>
                                 </select>
                                 <div class="form-text">
                                     {{ $t("unitDescription") }}

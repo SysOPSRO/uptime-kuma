@@ -105,8 +105,8 @@ router.all("/api/push/:pushToken", async (request, response) => {
         log.debug("router", `/api/push/ called at ${dayjs().format("YYYY-MM-DD HH:mm:ss.SSS")}`);
         log.debug("router", "PreviousStatus: " + previousHeartbeat?.status);
         log.debug("router", "Current Status: " + bean.status);
-
-        //bean.important = Monitor.isImportantBeat(isFirstBeat, previousHeartbeat?.status, bean.status);
+        let shouldNotify = false;
+        bean.important = Monitor.isImportantBeat(isFirstBeat, previousHeartbeat?.status, bean.status);
 
         // Track consecutive same-status beats for lesser notifications
         if (previousHeartbeat && previousHeartbeat.status === bean.status) {
@@ -119,30 +119,32 @@ router.all("/api/push/:pushToken", async (request, response) => {
             " monitor_id = ? AND important = 1 ORDER BY time DESC ",
             [monitor.id]);
 
-        bean.important = Monitor.shouldNotify(
+        shouldNotify = Monitor.shouldNotify(
             monitor, bean, previousHeartbeat, isFirstBeat, lastImportantBeat
         );
-        if(bean.important) {
-            if (Monitor.isImportantForNotification(isFirstBeat, previousHeartbeat?.status, bean.status)) {
+        if (shouldNotify && Monitor.isImportantForNotification(isFirstBeat, lastImportantBeat?.status ?? previousBeat?.status, bean.status)) {
+                bean.important = true;
                 // Reset down count
                 bean.downCount = 0;
-
                 log.debug("monitor", `[${monitor.name}] sendNotification`);
                 await Monitor.sendNotification(isFirstBeat, monitor, bean);
-            } else {
-                if (bean.status === DOWN && monitor.resendInterval > 0) {
-                    ++bean.downCount;
-                    if (bean.downCount >= monitor.resendInterval) {
-                        // Send notification again, because we are still DOWN
-                        log.debug(
-                            "monitor",
-                            `[${monitor.name}] sendNotification again: Down Count: ${bean.downCount} | Resend Interval: ${monitor.resendInterval}`
-                        );
-                        await Monitor.sendNotification(isFirstBeat, monitor, bean);
+        } else if (bean.important) {
+            // even if status changed, it is dampened so we do not keep important true
+            bean.important = false;
+        } else {
+            bean.important = false;
+            if (bean.status === DOWN && monitor.resendInterval > 0) {
+                ++bean.downCount;
+                if (bean.downCount >= monitor.resendInterval) {
+                    // Send notification again, because we are still DOWN
+                    log.debug(
+                        "monitor",
+                        `[${monitor.name}] sendNotification again: Down Count: ${bean.downCount} | Resend Interval: ${monitor.resendInterval}`
+                    );
+                    await Monitor.sendNotification(isFirstBeat, monitor, bean);
 
-                        // Reset down count
-                        bean.downCount = 0;
-                    }
+                    // Reset down count
+                    bean.downCount = 0;
                 }
             }
         }
