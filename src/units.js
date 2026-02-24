@@ -16,7 +16,7 @@ export const UNIT_OPTIONS = [
 /**
  * Short suffix for display.
  */
-const UNIT_SUFFIX = {
+export const UNIT_SUFFIX = {
     ms:      "ms",
     second:  "s",
     percent: "%",

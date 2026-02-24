@@ -6,6 +6,7 @@
 
 <script lang="ts">
 import { sleep } from "../util.ts";
+import { UNIT_OPTIONS,UNIT_SUFFIX } from "../units";
 
 export default {
     props: {
@@ -49,7 +50,7 @@ export default {
             }
         },
         unit() {
-            return this.monitor?.unit || "ms";
+            return " " + UNIT_SUFFIX[this.monitor?.unit] || "ms";
         },
     },
 
